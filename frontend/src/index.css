@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Fix full height for background */
+html,
+body,
+#root {
+  height: 100%;
+}
