@@ -3,8 +3,8 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from jose import JWTError, jwt
-from passlib.context import CryptContext
 from pydantic import BaseModel
+import bcrypt
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -15,11 +15,10 @@ from models import User
 
 router = APIRouter(tags=["Authentication"])
 
-SECRET_KEY = "supersecretkey123lokdhrishti"
+SECRET_KEY = os.getenv("SECRET_KEY", "supersecretkey123lokdhrishti")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
 # ================= EMAIL CONFIG =================
@@ -45,7 +44,6 @@ def send_email(to_email: str, subject: str, body: str):
         print(f"[EMAIL ERROR] {e}")
 
 # ================= PYDANTIC MODELS =================
-
 class RegisterRequest(BaseModel):
     username: str
     email: str
@@ -59,15 +57,13 @@ class ResetPasswordRequest(BaseModel):
     new_password: str
 
 # ================= PASSWORD UTILS =================
+def hash_password(password: str) -> str:
+    return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
 
-def hash_password(password: str):
-    return pwd_context.hash(password)
-
-def verify_password(plain_password, hashed_password):
-    return pwd_context.verify(plain_password, hashed_password)
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return bcrypt.checkpw(plain_password.encode("utf-8"), hashed_password.encode("utf-8"))
 
 # ================= TOKEN UTILS =================
-
 def create_access_token(data: dict, expires_minutes: int = ACCESS_TOKEN_EXPIRE_MINUTES):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expires_minutes)
@@ -75,7 +71,6 @@ def create_access_token(data: dict, expires_minutes: int = ACCESS_TOKEN_EXPIRE_M
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 # ================= AUTH DEPENDENCIES =================
-
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -89,7 +84,6 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             raise credentials_exception
     except JWTError:
         raise credentials_exception
-
     user = db.query(User).filter(User.email == email).first()
     if user is None:
         raise credentials_exception
@@ -101,13 +95,11 @@ def require_admin(current_user: User = Depends(get_current_user)):
     return current_user
 
 # ================= REGISTER =================
-
 @router.post("/register")
 def register(request: RegisterRequest, db: Session = Depends(get_db)):
     existing_user = db.query(User).filter(User.email == request.email).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Email already registered")
-
     new_user = User(
         username=request.username,
         email=request.email,
@@ -117,30 +109,24 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
-
     send_email(
         to_email=request.email,
         subject="Welcome to Lok Dhrishti!",
         body=f"""<h2>Welcome to Lok Dhrishti, {request.username}!</h2>
         <p>Your account has been created successfully.</p>
-        <p>You can now submit civic complaints and track their resolution.</p>
         <br><p>— Team Lok Dhrishti</p>"""
     )
-
     return {"message": "User registered successfully"}
 
 # ================= LOGIN =================
-
 @router.post("/login")
 def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == form_data.username).first()
     if not user or not verify_password(form_data.password, user.password):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid email or password")
-
     access_token = create_access_token(
         data={"sub": user.email, "role": user.role, "user_id": user.id}
     )
-
     return {
         "access_token": access_token,
         "token_type": "bearer",
@@ -150,7 +136,6 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     }
 
 # ================= GET CURRENT USER =================
-
 @router.get("/me")
 def get_me(current_user: User = Depends(get_current_user)):
     return {
@@ -161,36 +146,29 @@ def get_me(current_user: User = Depends(get_current_user)):
     }
 
 # ================= FORGOT PASSWORD =================
-
 @router.post("/forgot-password")
 def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
-
     if not user:
         return {"message": "If this email is registered, a reset link has been sent."}
-
     token = create_access_token({"sub": user.email, "type": "reset"}, expires_minutes=15)
-    reset_link = f"http://localhost:3000/reset-password/{token}"
-
+    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000")
+    reset_link = f"{frontend_url}/reset-password/{token}"
     user.reset_token = token
     user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=15)
     db.commit()
-
     send_email(
         to_email=user.email,
         subject="Lok Dhrishti — Reset Your Password",
         body=f"""<h2>Password Reset Request</h2>
         <p>Hi {user.username},</p>
-        <p>Click the link below to reset your password. This link expires in <b>15 minutes</b>.</p>
+        <p>Click below to reset your password (expires in 15 minutes):</p>
         <p><a href="{reset_link}" style="background:#1d4ed8;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Reset Password</a></p>
-        <p>If you did not request this, ignore this email.</p>
         <br><p>— Team Lok Dhrishti</p>"""
     )
-
     return {"message": "If this email is registered, a reset link has been sent."}
 
 # ================= RESET PASSWORD =================
-
 @router.post("/reset-password")
 def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db)):
     try:
@@ -201,29 +179,22 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
             raise HTTPException(status_code=400, detail="Invalid reset token")
     except JWTError:
         raise HTTPException(status_code=400, detail="Invalid or expired token")
-
     user = db.query(User).filter(User.email == email).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-
     if user.reset_token != request.token:
         raise HTTPException(status_code=400, detail="Token already used or invalid")
-
     if user.reset_token_expiry and datetime.utcnow() > user.reset_token_expiry:
         raise HTTPException(status_code=400, detail="Reset token has expired")
-
     user.password = hash_password(request.new_password)
     user.reset_token = None
     user.reset_token_expiry = None
     db.commit()
-
     send_email(
         to_email=user.email,
-        subject="Lok Dhrishti — Password Changed Successfully",
-        body=f"""<h2>Password Changed</h2>
+        subject="Lok Dhrishti — Password Changed",
+        body=f"""<h2>Password Changed Successfully</h2>
         <p>Hi {user.username}, your password was reset successfully.</p>
-        <p>If you did not do this, please contact us immediately.</p>
         <br><p>— Team Lok Dhrishti</p>"""
     )
-
     return {"message": "Password reset successful"}
