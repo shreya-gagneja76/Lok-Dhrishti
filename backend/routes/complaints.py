@@ -8,7 +8,7 @@ import os, shutil, uuid
 
 from database import get_db
 from models import Complaint, User
-from routes.auth import get_current_user, require_admin, send_email
+from routes.auth import get_current_user, require_admin
 
 router = APIRouter(tags=["Complaints"])
 
@@ -78,17 +78,6 @@ async def create_complaint(
     db.add(new_complaint)
     db.commit()
     db.refresh(new_complaint)
-
-    send_email(
-        current_user.email,
-        "Lok Dhrishti — Complaint Submitted",
-        f"""<h2>Complaint Received!</h2>
-        <p>Hi {current_user.username},</p>
-        <p>Your complaint <b>#{new_complaint.id}: {title}</b> has been submitted.</p>
-        <p><b>Category:</b> {category}<br><b>Location:</b> {location}<br><b>Status:</b> Pending</p>
-        <br><p>— Team Lok Dhrishti</p>"""
-    )
-
     return new_complaint
 
 @router.get("/complaints", response_model=List[ComplaintResponse])
@@ -112,25 +101,8 @@ def update_complaint_status(
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
-
-    old_status = complaint.status
     complaint.status = update_data.status
     db.commit()
-
-    citizen = db.query(User).filter(User.email == complaint.user_email).first()
-    if citizen:
-        send_email(
-            citizen.email,
-            f"Lok Dhrishti — Complaint #{complaint_id} Updated",
-            f"""<h2>Complaint Status Update</h2>
-            <p>Hi {citizen.username},</p>
-            <p>Your complaint <b>#{complaint_id}: {complaint.title}</b> status changed.</p>
-            <p><b>Previous:</b> {old_status}<br>
-            <b>New Status:</b> <b>{update_data.status}</b></p>
-            {"<p>Your complaint has been resolved!</p>" if update_data.status == "Resolved" else ""}
-            <br><p>— Team Lok Dhrishti</p>"""
-        )
-
     return {"message": f"Status updated to {update_data.status}"}
 
 @router.delete("/admin/complaints/{complaint_id}")

@@ -6,9 +6,6 @@ from jose import JWTError, jwt
 from pydantic import BaseModel
 import bcrypt
 import os
-import urllib.request
-import urllib.error
-import json
 
 from database import get_db
 from models import User
@@ -20,34 +17,6 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
-
-RESEND_API_KEY = os.getenv("RESEND_API_KEY", "")
-MAIL_FROM = "Lok Dhrishti <onboarding@resend.dev>"
-
-def send_email(to_email: str, subject: str, body: str):
-    if not RESEND_API_KEY:
-        print(f"[EMAIL SKIPPED] No Resend API key")
-        return
-    try:
-        payload = json.dumps({
-            "from": MAIL_FROM,
-            "to": [to_email],
-            "subject": subject,
-            "html": body
-        }).encode("utf-8")
-        req = urllib.request.Request(
-            "https://api.resend.com/emails",
-            data=payload,
-            headers={
-                "Authorization": f"Bearer {RESEND_API_KEY}",
-                "Content-Type": "application/json"
-            },
-            method="POST"
-        )
-        with urllib.request.urlopen(req) as res:
-            print(f"[EMAIL SENT] To: {to_email} | Status: {res.status}")
-    except Exception as e:
-        print(f"[EMAIL ERROR] {e}")
 
 # ================= PYDANTIC MODELS =================
 class RegisterRequest(BaseModel):
@@ -108,14 +77,6 @@ def register(request: RegisterRequest, db: Session = Depends(get_db)):
     db.add(user)
     db.commit()
     db.refresh(user)
-    send_email(
-        request.email,
-        "Welcome to Lok Dhrishti!",
-        f"""<h2>Welcome to Lok Dhrishti, {request.username}!</h2>
-        <p>Your account has been created successfully.</p>
-        <p>You can now submit civic complaints and track their resolution.</p>
-        <br><p>— Team Lok Dhrishti</p>"""
-    )
     return {"message": "User registered successfully"}
 
 # ================= LOGIN =================
@@ -155,17 +116,11 @@ def forgot_password(request: ForgotPasswordRequest, db: Session = Depends(get_db
     user.reset_token = token
     user.reset_token_expiry = datetime.utcnow() + timedelta(minutes=15)
     db.commit()
-    send_email(
-        user.email,
-        "Lok Dhrishti — Reset Your Password",
-        f"""<h2>Password Reset Request</h2>
-        <p>Hi {user.username},</p>
-        <p>Click the link below to reset your password. Expires in <b>15 minutes</b>.</p>
-        <p><a href="{reset_link}" style="background:#1d4ed8;color:white;padding:10px 20px;border-radius:5px;text-decoration:none;">Reset Password</a></p>
-        <p>If you did not request this, ignore this email.</p>
-        <br><p>— Team Lok Dhrishti</p>"""
-    )
-    return {"message": "If this email is registered, a reset link has been sent."}
+    # Return reset link directly in response (no email)
+    return {
+        "message": "Password reset link generated successfully.",
+        "reset_link": reset_link
+    }
 
 # ================= RESET PASSWORD =================
 @router.post("/reset-password")
@@ -186,11 +141,4 @@ def reset_password(request: ResetPasswordRequest, db: Session = Depends(get_db))
     user.reset_token = None
     user.reset_token_expiry = None
     db.commit()
-    send_email(
-        user.email,
-        "Lok Dhrishti — Password Changed",
-        f"""<h2>Password Changed Successfully</h2>
-        <p>Hi {user.username}, your password was reset successfully.</p>
-        <br><p>— Team Lok Dhrishti</p>"""
-    )
     return {"message": "Password reset successful"}
