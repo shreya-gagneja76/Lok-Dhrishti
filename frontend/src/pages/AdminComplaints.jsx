@@ -2,6 +2,8 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { getComplaints, updateComplaintStatus } from "../api";
 
+const BACKEND_URL = process.env.REACT_APP_API_URL?.replace("/api", "") || "http://localhost:8000";
+
 const statusBadge = (status) => {
   if (status === "Resolved")    return "bg-green-100 text-green-700";
   if (status === "Pending")     return "bg-yellow-100 text-yellow-700";
@@ -46,7 +48,7 @@ export default function AdminComplaints() {
       setComplaints((prev) =>
         prev.map((c) => c.id === id ? { ...c, status: newStatus } : c)
       );
-      setSuccessMsg(`Complaint #${id} updated to "${newStatus}" — citizen notified by email!`);
+      setSuccessMsg(`✅ Complaint #${id} status updated to "${newStatus}"`);
       setTimeout(() => setSuccessMsg(""), 4000);
     } catch (err) {
       setError(err?.message || "Error updating complaint");
@@ -62,14 +64,14 @@ export default function AdminComplaints() {
     <div className="max-w-7xl mx-auto p-6">
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-blue-900">Manage Complaints</h1>
-        <span className="text-sm text-gray-500">{complaints.length} total complaints</span>
+        <span className="text-sm text-gray-500">{complaints.length} total</span>
       </div>
 
       {error && (
         <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">⚠️ {error}</div>
       )}
       {successMsg && (
-        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">✅ {successMsg}</div>
+        <div className="mb-4 p-3 bg-green-100 text-green-700 rounded-lg">{successMsg}</div>
       )}
 
       {complaints.length === 0 ? (
@@ -92,24 +94,34 @@ export default function AdminComplaints() {
                   <h3 className="font-semibold text-gray-800 text-lg">{c.title}</h3>
                   <p className="text-gray-600 text-sm mt-1">{c.description}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
-                    <span> {c.category}</span>
-                    <span> {c.location}</span>
-                    <span> {c.user_email}</span>
-                    <span> {new Date(c.created_at).toLocaleDateString()}</span>
+                    <span>🏷️ {c.category}</span>
+                    <span>📍 {c.location}</span>
+                    <span>👤 {c.user_email}</span>
+                    <span>🕐 {new Date(c.created_at).toLocaleDateString()}</span>
                   </div>
+
+                  {/* Show image/video */}
                   {c.media_url && (
                     <div className="mt-3">
                       {c.media_url.match(/\.(mp4|mov|avi|webm)$/i) ? (
-                        <video src={`http://localhost:8000${c.media_url}`} controls className="max-h-40 rounded-lg"/>
+                        <video
+                          src={`${BACKEND_URL}${c.media_url}`}
+                          controls
+                          className="max-h-40 rounded-lg"
+                        />
                       ) : (
-                        <img src={`http://localhost:8000${c.media_url}`} alt="evidence"
-                          className="max-h-40 rounded-lg object-cover cursor-pointer"
-                          onClick={() => window.open(`http://localhost:8000${c.media_url}`)}
+                        <img
+                          src={`${BACKEND_URL}${c.media_url}`}
+                          alt="evidence"
+                          className="max-h-40 rounded-lg object-cover cursor-pointer border"
+                          onClick={() => window.open(`${BACKEND_URL}${c.media_url}`)}
+                          onError={(e) => { e.target.style.display='none' }}
                         />
                       )}
                     </div>
                   )}
                 </div>
+
                 <div className="flex flex-col gap-2 min-w-[160px]">
                   <label className="text-xs text-gray-500 font-medium">Update Status</label>
                   <select

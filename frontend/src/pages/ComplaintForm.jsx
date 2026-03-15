@@ -137,12 +137,12 @@ export default function ComplaintForm() {
 
       {status === "success" && (
         <div className="mb-4 p-4 bg-green-100 text-green-800 rounded-lg border border-green-300">
-          Complaint submitted successfully! You will receive an email confirmation.
+          ✅ Complaint submitted successfully! You can track the status in My Complaints.
         </div>
       )}
       {status && status !== "success" && (
         <div className="mb-4 p-4 bg-red-100 text-red-800 rounded-lg border border-red-300">
-           {status}
+          ⚠️ {status}
         </div>
       )}
 
@@ -175,11 +175,11 @@ export default function ComplaintForm() {
             name="category" value={formData.category} onChange={handleChange}
             className="w-full border border-gray-300 px-3 py-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400"
           >
-            <option value="Road"> Road Issue</option>
-            <option value="Water"> Water Issue</option>
-            <option value="Electricity">Electricity Issue</option>
-            <option value="Garbage">Garbage Issue</option>
-            <option value="Other">Other</option>
+            <option value="Road">🛣️ Road Issue</option>
+            <option value="Water">💧 Water Issue</option>
+            <option value="Electricity">⚡ Electricity Issue</option>
+            <option value="Garbage">🗑️ Garbage Issue</option>
+            <option value="Other">📋 Other</option>
           </select>
         </div>
 
@@ -192,7 +192,7 @@ export default function ComplaintForm() {
           <div ref={mapRef} style={{ height: "280px", borderRadius: "8px", border: "1px solid #d1d5db" }} />
           {latitude && (
             <p className="mt-2 text-sm text-green-700 font-medium">
-               Pinned: {latitude.toFixed(5)}, {longitude.toFixed(5)}
+              ✅ Pinned: {latitude.toFixed(5)}, {longitude.toFixed(5)}
             </p>
           )}
         </div>
@@ -210,7 +210,7 @@ export default function ComplaintForm() {
         {/* Media Upload */}
         <div>
           <label className="block font-semibold mb-1 text-gray-700">
-             Attach Photo / Video (optional)
+            📷 Attach Photo / Video (optional)
           </label>
           <div
             onDrop={handleDrop}

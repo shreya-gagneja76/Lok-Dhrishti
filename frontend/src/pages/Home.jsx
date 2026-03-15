@@ -49,7 +49,7 @@ export default function Home() {
             <li>Login or Signup to create your account.</li>
             <li>Submit complaints with photos and location pin.</li>
             <li>Track complaint status in "My Complaints".</li>
-            <li>Get email notifications on every status update.</li>
+            <li>Track your complaint status in real time from My Complaints.</li>
           </ol>
         </section>
 

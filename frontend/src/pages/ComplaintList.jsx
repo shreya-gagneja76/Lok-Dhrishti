@@ -2,13 +2,7 @@ import React, { useState, useEffect, useContext } from "react";
 import { getComplaints } from "../api";
 import { AuthContext } from "../context/AuthContext";
 
-const statusColor = (status) => {
-  if (status === "Resolved")   return "text-green-600";
-  if (status === "Pending")    return "text-yellow-600";
-  if (status === "In Progress") return "text-blue-600";
-  if (status === "Rejected")   return "text-red-600";
-  return "text-gray-600";
-};
+const BACKEND_URL = process.env.REACT_APP_API_URL?.replace("/api", "") || "http://localhost:8000";
 
 const statusBadge = (status) => {
   if (status === "Resolved")    return "bg-green-100 text-green-700";
@@ -28,12 +22,10 @@ export default function ComplaintList() {
 
   useEffect(() => {
     if (!token) return;
-
     const fetchComplaints = async () => {
       try {
         setLoading(true);
         setError("");
-        // ✅ Only pass token — no email needed
         const data = await getComplaints(token);
         setComplaints(Array.isArray(data) ? data : []);
       } catch (err) {
@@ -42,33 +34,27 @@ export default function ComplaintList() {
         setLoading(false);
       }
     };
-
     fetchComplaints();
   }, [token]);
 
-  if (!user) {
-    return <p className="text-center text-red-600 mt-8">Please login to view complaints.</p>;
-  }
+  if (!user) return <p className="text-center text-red-600 mt-8">Please login to view complaints.</p>;
 
   return (
     <div className="max-w-3xl mx-auto p-6">
       <h2 className="text-2xl font-bold mb-6 text-blue-900">My Complaints</h2>
 
-      {loading && (
-        <div className="text-center py-8 text-gray-500">Loading complaints...</div>
-      )}
+      {loading && <div className="text-center py-8 text-gray-500">Loading complaints...</div>}
 
       {error && (
-        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">
-          ⚠️ {error}
-        </div>
+        <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-lg">⚠️ {error}</div>
       )}
 
       {!loading && complaints.length === 0 && !error && (
         <div className="text-center py-12 bg-white rounded-xl shadow">
           <p className="text-4xl mb-3">📋</p>
           <p className="text-gray-500 text-lg">No complaints yet.</p>
-          <a href="/complaints/new" className="mt-4 inline-block bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800">
+          <a href="/complaints/new"
+            className="mt-4 inline-block bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800">
             Submit your first complaint
           </a>
         </div>
@@ -90,25 +76,26 @@ export default function ComplaintList() {
             <p className="text-gray-600 text-sm mb-3">{complaint.description}</p>
 
             <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-              <span> {complaint.category}</span>
-              <span> {complaint.location}</span>
-              <span> {new Date(complaint.created_at).toLocaleDateString()}</span>
+              <span>🏷️ {complaint.category}</span>
+              <span>📍 {complaint.location}</span>
+              <span>🕐 {new Date(complaint.created_at).toLocaleDateString()}</span>
             </div>
 
-            {/* Show image if attached */}
+            {/* Show image/video */}
             {complaint.media_url && (
               <div className="mt-3">
                 {complaint.media_url.match(/\.(mp4|mov|avi|webm)$/i) ? (
                   <video
-                    src={`http://localhost:8000${complaint.media_url}`}
+                    src={`${BACKEND_URL}${complaint.media_url}`}
                     controls
                     className="max-h-48 rounded-lg"
                   />
                 ) : (
                   <img
-                    src={`http://localhost:8000${complaint.media_url}`}
-                    alt="complaint"
-                    className="max-h-48 rounded-lg object-cover"
+                    src={`${BACKEND_URL}${complaint.media_url}`}
+                    alt="complaint evidence"
+                    className="max-h-48 rounded-lg object-cover border"
+                    onError={(e) => { e.target.style.display='none' }}
                   />
                 )}
               </div>
