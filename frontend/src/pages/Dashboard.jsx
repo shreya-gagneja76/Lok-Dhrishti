@@ -112,10 +112,10 @@ export default function Dashboard() {
         <>
           {/* Stat Cards */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-            <StatCard label="Total Complaints" value={total}      color="#6366f1" icon="📋" />
-            <StatCard label="Pending"          value={pending}    color="#f59e0b" icon="⏳" />
-            <StatCard label="In Progress"      value={inProgress} color="#3b82f6" icon="🔄" />
-            <StatCard label="Resolved"         value={resolved}   color="#10b981" icon="✅" />
+            <StatCard label="Total Complaints" value={total}      color="#6366f1" />
+            <StatCard label="Pending"          value={pending}    color="#f59e0b"  />
+            <StatCard label="In Progress"      value={inProgress} color="#3b82f6"  />
+            <StatCard label="Resolved"         value={resolved}   color="#10b981"  />
           </div>
 
           {/* Charts Row */}

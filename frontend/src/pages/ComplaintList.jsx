@@ -51,7 +51,7 @@ export default function ComplaintList() {
 
       {!loading && complaints.length === 0 && !error && (
         <div className="text-center py-12 bg-white rounded-xl shadow">
-          <p className="text-4xl mb-3">📋</p>
+          <p className="text-4xl mb-3"></p>
           <p className="text-gray-500 text-lg">No complaints yet.</p>
           <a href="/complaints/new"
             className="mt-4 inline-block bg-blue-700 text-white px-6 py-2 rounded-lg hover:bg-blue-800">
@@ -76,9 +76,9 @@ export default function ComplaintList() {
             <p className="text-gray-600 text-sm mb-3">{complaint.description}</p>
 
             <div className="flex flex-wrap gap-3 text-sm text-gray-500">
-              <span>🏷️ {complaint.category}</span>
-              <span>📍 {complaint.location}</span>
-              <span>🕐 {new Date(complaint.created_at).toLocaleDateString()}</span>
+              <span> {complaint.category}</span>
+              <span> {complaint.location}</span>
+              <span> {new Date(complaint.created_at).toLocaleDateString()}</span>
             </div>
 
             {/* Show image/video */}

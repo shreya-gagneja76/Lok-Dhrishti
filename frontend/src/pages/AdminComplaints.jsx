@@ -94,10 +94,10 @@ export default function AdminComplaints() {
                   <h3 className="font-semibold text-gray-800 text-lg">{c.title}</h3>
                   <p className="text-gray-600 text-sm mt-1">{c.description}</p>
                   <div className="flex flex-wrap gap-3 mt-2 text-sm text-gray-500">
-                    <span>🏷️ {c.category}</span>
-                    <span>📍 {c.location}</span>
-                    <span>👤 {c.user_email}</span>
-                    <span>🕐 {new Date(c.created_at).toLocaleDateString()}</span>
+                    <span>{c.category}</span>
+                    <span>{c.location}</span>
+                    <span> {c.user_email}</span>
+                    <span> {new Date(c.created_at).toLocaleDateString()}</span>
                   </div>
 
                   {/* Show image/video */}

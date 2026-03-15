@@ -56,7 +56,7 @@ export default function ForgotPassword() {
           </div>
 
           {error && (
-            <p className="text-red-600 text-sm">⚠️ {error}</p>
+            <p className="text-red-600 text-sm"> {error}</p>
           )}
 
           <button
@@ -79,7 +79,7 @@ export default function ForgotPassword() {
       ) : (
         <div className="space-y-4">
           <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-            <p className="text-green-700 font-medium mb-2">✅ Reset link generated!</p>
+            <p className="text-green-700 font-medium mb-2">Reset link generated!</p>
             <p className="text-gray-600 text-sm mb-3">
               Click the button below to reset your password:
             </p>
