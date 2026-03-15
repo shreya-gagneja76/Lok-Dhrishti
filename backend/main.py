@@ -10,32 +10,22 @@ from routes.auth import router as auth_router
 from routes.complaints import router as complaint_router
 from database import engine, Base
 
-# Create tables
 Base.metadata.create_all(bind=engine)
-
-# Create uploads folder
 os.makedirs("uploads", exist_ok=True)
 
 app = FastAPI(title="Lok Dhrishti API", version="1.0.0")
 
-# CORS — allow both local and deployed frontend
-FRONTEND_URL = os.getenv("FRONTEND_URL", "http://localhost:3000")
+# Allow all origins for now — fixes CORS for any frontend URL
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        FRONTEND_URL,
-    ],
-    allow_credentials=True,
+    allow_origins=["*"],
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Serve uploaded files as static
 app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
-# Routes
 app.include_router(auth_router, prefix="/api")
 app.include_router(complaint_router, prefix="/api")
 
